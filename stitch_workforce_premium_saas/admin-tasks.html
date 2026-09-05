@@ -816,5 +816,90 @@
 <script src="js/deletionWizardModal.js"></script>
 <script src="tasks.js"></script>
 <script src="js/taskHandoverModal.js"></script>
+
+<!-- ==================== MODAL: SMART WORK DECOMPOSITION & BALANCED ALLOCATION ==================== -->
+<div class="modal-overlay" id="modal-decomposition" style="z-index:2500;">
+  <div class="modal-box" style="max-width:960px;">
+    <div class="modal-header" style="border-bottom:1px solid rgba(0,0,0,0.06); padding-bottom:14px; margin-bottom:18px;">
+      <div>
+        <h3 style="margin:0 0 4px 0; font-size:19px; font-weight:900; color:var(--teal-900); display:flex; align-items:center; gap:10px;">
+          <i class="fa-solid fa-brain" style="color:#0f766e;"></i> Smart Work Decomposition &amp; Balanced Allocation
+        </h3>
+        <p style="margin:0; font-size:12.5px; color:var(--text-muted);">
+          Decompose high-level manager goals into balanced actionable sub-tasks across available employees.
+        </p>
+      </div>
+      <i class="fa-solid fa-xmark modal-close" onclick="document.getElementById('modal-decomposition').classList.remove('active')" style="cursor:pointer; font-size:20px;"></i>
+    </div>
+
+    <!-- Step 1: High Level Goal & Quick Templates -->
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:18px;">
+      <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:16px; align-items:flex-end;">
+        <div>
+          <label style="font-size:12px; font-weight:800; color:#334155; display:block; margin-bottom:4px;">1. HIGH-LEVEL GOAL / OBJECTIVE *</label>
+          <input type="text" id="decomp-goal-title" placeholder="e.g. Prepare Jejuri Plant for US-FDA Audit or Annual Machinery Overhaul" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1; font-weight:700; font-size:13.5px;">
+        </div>
+
+        <div>
+          <label style="font-size:12px; font-weight:800; color:#334155; display:block; margin-bottom:4px;">QUICK GOAL TEMPLATE</label>
+          <select id="decomp-template-select" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1; font-weight:600; font-size:13px; background:#fff;">
+            <option value="">-- Choose Pre-built Operational Template --</option>
+            <option value="fda_audit">🏥 US-FDA / Plant GMP Audit Preparation (7 Sub-tasks)</option>
+            <option value="machine_maint">⚙️ Preventive Maintenance of 12 Tablet Machines (6 Sub-tasks)</option>
+            <option value="quality_qms">🧪 QMS Site Quality &amp; SOP Recalibration (5 Sub-tasks)</option>
+            <option value="batch_prod">📦 High-Priority Batch Production &amp; Release (5 Sub-tasks)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Employee Bandwidth Heatmap -->
+    <div style="margin-bottom:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="font-size:12.5px; font-weight:800; color:var(--teal-900);">
+          <i class="fa-solid fa-users-viewfinder"></i> Team Live Workload &amp; Bandwidth Gauge
+        </span>
+        <button type="button" id="btn-auto-balance" style="padding:5px 12px; border-radius:6px; background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:12px; font-weight:800; cursor:pointer;">
+          <i class="fa-solid fa-scale-balanced"></i> Auto-Balance &amp; Distribute Evenly
+        </button>
+      </div>
+
+      <div id="decomp-workload-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px;">
+        <!-- Rendered via JS: Shows employee cards with active task count badges -->
+      </div>
+    </div>
+
+    <!-- Step 2: Actionable Sub-Tasks List -->
+    <div style="margin-bottom:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:12.5px; font-weight:800; color:var(--teal-900);">
+          <i class="fa-solid fa-list-check"></i> Actionable Sub-Tasks (<span id="decomp-task-count">0</span>)
+        </span>
+        <button type="button" id="btn-add-subtask" style="padding:4px 10px; border-radius:6px; background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; font-size:12px; font-weight:700; cursor:pointer;">
+          <i class="fa-solid fa-plus"></i> Add Sub-Task
+        </button>
+      </div>
+
+      <div style="max-height:260px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:10px; padding:10px; background:#fff;">
+        <div id="decomp-subtasks-list">
+          <!-- Rendered Subtask Items -->
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(0,0,0,0.06); padding-top:14px;">
+      <span style="font-size:12px; color:#64748b;" id="decomp-summary-text">
+        Ready to allocate tasks across team members.
+      </span>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('modal-decomposition').classList.remove('active')">Cancel</button>
+        <button type="button" class="btn-primary" id="btn-publish-allocation" style="background:var(--teal-900); padding:10px 24px;">
+          <i class="fa-solid fa-paper-plane"></i> Publish &amp; Assign Tasks
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

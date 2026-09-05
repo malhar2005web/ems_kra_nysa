@@ -545,3 +545,45 @@ export async function createTemplate(req, res) {
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 }
+
+export async function bulkAllocateTasks(req, res) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const { goalTitle, tasks } = req.body;
+        // tasks: [ { title, description, assignedTo, priority, dueDate, estimatedHours } ]
+        if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
+            return res.status(400).json({ success: false, message: "No tasks provided for allocation" });
+        }
+
+        const createdTasks = [];
+        for (const t of tasks) {
+            const result = await client.query(`
+                INSERT INTO tasks (
+                    title, description, assigned_to, priority, due_date, status, created_at
+                ) VALUES ($1, $2, $3, $4, $5, 'Pending', NOW())
+                RETURNING *;
+            `, [
+                t.title,
+                t.description ? `[Goal: ${goalTitle}] ${t.description}` : `[Goal: ${goalTitle}]`,
+                t.assignedTo,
+                t.priority || 'Medium',
+                t.dueDate || null
+            ]);
+            createdTasks.push(result.rows[0]);
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json({
+            success: true,
+            data: createdTasks,
+            message: `Successfully decomposed goal into ${createdTasks.length} balanced tasks!`
+        });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error("Error in bulkAllocateTasks:", err);
+        res.status(500).json({ success: false, message: err.message });
+    } finally {
+        client.release();
+    }
+}

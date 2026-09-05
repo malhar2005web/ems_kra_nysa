@@ -11,7 +11,8 @@ import {
     deleteTask, 
     forwardTask, 
     approveTask, 
-    createTemplate 
+    createTemplate,
+    bulkAllocateTasks 
 } from '../controller/task.controller.js';
 import { protectRoute, isAdmin } from '../middleware/protectRoute.js';
 
@@ -32,6 +33,7 @@ router.delete("/:id", deleteTask);
 router.post("/:id/forward", forwardTask);
 router.post("/:id/approve", approveTask);
 router.post("/templates", createTemplate);
+router.post("/bulk-allocate", bulkAllocateTasks);
 
 export default router;
 

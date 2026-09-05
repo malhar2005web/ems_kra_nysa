@@ -1863,3 +1863,257 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadData();
 });
+
+
+// ==================== SMART WORK ALLOCATION & DECOMPOSITION ENGINE ====================
+const PRESET_TEMPLATES = {
+    'fda_audit': {
+        title: 'Prepare Jejuri Plant for US-FDA / GMP Regulatory Audit',
+        tasks: [
+            { title: 'Calibration records audit of Tablet Compression Machines 1-4', priority: 'High', hours: 6 },
+            { title: 'Review and verify 18 Critical SOPs in Quality Assurance', priority: 'High', hours: 8 },
+            { title: 'HVAC Air Ducts deep-cleaning and swab micro-testing log', priority: 'Medium', hours: 5 },
+            { title: 'Verify Training Logs & Competency Checklists for 25 operators', priority: 'Medium', hours: 4 },
+            { title: 'Warehouse raw material temperature & humidity continuous logs verification', priority: 'High', hours: 6 },
+            { title: 'CAPA closure audit for past 3 months deviation reports', priority: 'Urgent', hours: 8 },
+            { title: 'Fire NOC & EHS safety equipment physical inspection checklist', priority: 'Medium', hours: 4 }
+        ]
+    },
+    'machine_maint': {
+        title: 'Preventive Maintenance Overhaul of 12 Tablet Compression Machines',
+        tasks: [
+            { title: 'Tooling inspection and upper/lower punch wear measurement', priority: 'High', hours: 6 },
+            { title: 'Hydraulic pressure system oil change and filter replacement', priority: 'Medium', hours: 5 },
+            { title: 'Safety emergency interlock sensor recalibration and testing', priority: 'Urgent', hours: 4 },
+            { title: 'Drive motor belt tension check and gearbox lubrication', priority: 'Medium', hours: 4 },
+            { title: 'Feeder gearbox cleaning, clearance inspection and trial run', priority: 'High', hours: 6 },
+            { title: 'Final logbook sign-off and engineering handover certificate', priority: 'Medium', hours: 3 }
+        ]
+    },
+    'quality_qms': {
+        title: 'QMS Site Quality Index & SOP Competency Recalibration',
+        tasks: [
+            { title: 'Site Quality Index (QI) monthly batch defect trend analysis', priority: 'High', hours: 6 },
+            { title: 'Review SOP compliance for sterile area entry/exit protocols', priority: 'Urgent', hours: 5 },
+            { title: 'Re-qualify 5 senior technicians on critical blister packing checks', priority: 'Medium', hours: 6 },
+            { title: 'Vendor raw material COA (Certificate of Analysis) cross-verification', priority: 'High', hours: 5 },
+            { title: 'Risk Register review and 15 pending CAPA milestones closure', priority: 'Urgent', hours: 7 }
+        ]
+    },
+    'batch_prod': {
+        title: 'Urgent Batch Production & Dispatch (50,000 Packs)',
+        tasks: [
+            { title: 'Granulation and fluid bed drying batch preparation', priority: 'Urgent', hours: 8 },
+            { title: 'High-speed tablet compression line setup and in-process testing', priority: 'High', hours: 8 },
+            { title: 'Blister packaging and carton serialization barcode scan', priority: 'High', hours: 6 },
+            { title: 'QC analytical release testing and microbial assay testing', priority: 'Urgent', hours: 6 },
+            { title: 'Final QA batch release certificate and logistics dispatch handover', priority: 'Urgent', hours: 4 }
+        ]
+    }
+};
+
+let currentDecompTasks = [];
+let allEmployeesList = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnOpen = document.getElementById('btn-open-decomposition');
+    if (btnOpen) {
+        btnOpen.addEventListener('click', openDecompositionModal);
+    }
+
+    const tplSelect = document.getElementById('decomp-template-select');
+    if (tplSelect) {
+        tplSelect.addEventListener('change', handleTemplateSelect);
+    }
+
+    const btnAdd = document.getElementById('btn-add-subtask');
+    if (btnAdd) {
+        btnAdd.addEventListener('click', () => addSubtaskRow('', 'Medium', 4));
+    }
+
+    const btnBalance = document.getElementById('btn-auto-balance');
+    if (btnBalance) {
+        btnBalance.addEventListener('click', autoBalanceSubtasks);
+    }
+
+    const btnPublish = document.getElementById('btn-publish-allocation');
+    if (btnPublish) {
+        btnPublish.addEventListener('click', publishAllocatedTasks);
+    }
+});
+
+async function openDecompositionModal() {
+    document.getElementById('modal-decomposition').classList.add('active');
+    await loadTeamBandwidth();
+    if (currentDecompTasks.length === 0) {
+        loadTemplateData('fda_audit');
+    }
+}
+
+async function loadTeamBandwidth() {
+    try {
+        const empRes = await fetch('/api/v1/employees');
+        const empJson = await empRes.json();
+        if (empJson.success && empJson.data) {
+            allEmployeesList = empJson.data;
+        }
+
+        const taskRes = await fetch('/api/v1/tasks');
+        const taskJson = await taskRes.json();
+        const activeTasks = (taskJson.success && taskJson.data) ? taskJson.data : [];
+
+        // Count tasks per employee
+        const taskCountMap = {};
+        allEmployeesList.forEach(e => taskCountMap[e.id] = 0);
+        activeTasks.forEach(t => {
+            if (t.status !== 'Completed' && t.status !== 'Approved' && t.assigned_to) {
+                taskCountMap[t.assigned_to] = (taskCountMap[t.assigned_to] || 0) + 1;
+            }
+        });
+
+        // Render Bandwidth Cards
+        const grid = document.getElementById('decomp-workload-grid');
+        grid.innerHTML = '';
+
+        allEmployeesList.forEach(e => {
+            const count = taskCountMap[e.id] || 0;
+            let badgeBg = '#dcfce7', badgeCol = '#15803d', label = 'Available (Low)';
+            if (count >= 5) { badgeBg = '#fee2e2'; badgeCol = '#991b1b'; label = 'High Load'; }
+            else if (count >= 3) { badgeBg = '#fef3c7'; badgeCol = '#92400e'; label = 'Medium Load'; }
+
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; font-size:12px;';
+            card.innerHTML = `
+                <div style="font-weight:800; color:var(--teal-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${e.full_name}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                    <span style="font-weight:700; color:#475569;">${count} Active Tasks</span>
+                    <span style="background:${badgeBg}; color:${badgeCol}; font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px;">${count}</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    } catch (err) {
+        console.error('Error loading team bandwidth:', err);
+    }
+}
+
+function handleTemplateSelect(e) {
+    const val = e.target.value;
+    if (val && PRESET_TEMPLATES[val]) {
+        loadTemplateData(val);
+    }
+}
+
+function loadTemplateData(tplKey) {
+    const tpl = PRESET_TEMPLATES[tplKey];
+    if (!tpl) return;
+
+    document.getElementById('decomp-goal-title').value = tpl.title;
+    const container = document.getElementById('decomp-subtasks-list');
+    container.innerHTML = '';
+    currentDecompTasks = [];
+
+    tpl.tasks.forEach(t => {
+        addSubtaskRow(t.title, t.priority, t.hours);
+    });
+
+    autoBalanceSubtasks();
+}
+
+function addSubtaskRow(title = '', priority = 'Medium', hours = 4, assignedTo = '') {
+    const container = document.getElementById('decomp-subtasks-list');
+    const rowId = 'subtask-' + Date.now() + '-' + Math.round(Math.random()*1000);
+
+    const empOptions = allEmployeesList.map(e => `
+        <option value="${e.id}" ${e.id == assignedTo ? 'selected' : ''}>${e.full_name}</option>
+    `).join('');
+
+    const row = document.createElement('div');
+    row.id = rowId;
+    row.style.cssText = 'display:grid; grid-template-columns: 2fr 100px 90px 1.5fr 30px; gap:8px; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9;';
+    row.innerHTML = `
+        <input type="text" class="st-title" value="${escapeHtml(title)}" placeholder="Sub-task deliverable description..." style="padding:6px 10px; border-radius:6px; border:1px solid #cbd5e1; font-size:12.5px; font-weight:600;">
+        <select class="st-priority" style="padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; font-weight:700;">
+            <option value="Urgent" ${priority === 'Urgent' ? 'selected' : ''}>🔥 Urgent</option>
+            <option value="High" ${priority === 'High' ? 'selected' : ''}>⚡ High</option>
+            <option value="Medium" ${priority === 'Medium' ? 'selected' : ''}>Normal</option>
+        </select>
+        <input type="number" class="st-hours" value="${hours}" placeholder="Hours" style="padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; text-align:center;">
+        <select class="st-assigned" style="padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-size:12px; font-weight:700; background:#fff;">
+            <option value="">-- Assign Employee --</option>
+            ${empOptions}
+        </select>
+        <i class="fa-solid fa-trash" style="color:#ef4444; cursor:pointer; font-size:13px;" onclick="document.getElementById('${rowId}').remove(); updateSubtaskCount();"></i>
+    `;
+    container.appendChild(row);
+    updateSubtaskCount();
+}
+
+function updateSubtaskCount() {
+    const rows = document.querySelectorAll('#decomp-subtasks-list > div');
+    document.getElementById('decomp-task-count').textContent = rows.length;
+}
+
+function autoBalanceSubtasks() {
+    if (allEmployeesList.length === 0) return;
+    const rows = document.querySelectorAll('#decomp-subtasks-list > div');
+    
+    // Round robin distribution across available employees
+    rows.forEach((r, idx) => {
+        const emp = allEmployeesList[idx % allEmployeesList.length];
+        const sel = r.querySelector('.st-assigned');
+        if (sel) sel.value = emp.id;
+    });
+
+    document.getElementById('decomp-summary-text').textContent = `✅ Evenly balanced ${rows.length} sub-tasks across ${allEmployeesList.length} employees!`;
+}
+
+async function publishAllocatedTasks() {
+    const goalTitle = document.getElementById('decomp-goal-title').value.trim();
+    if (!goalTitle) {
+        alert('Please enter a goal title.');
+        return;
+    }
+
+    const rows = document.querySelectorAll('#decomp-subtasks-list > div');
+    const tasks = [];
+
+    rows.forEach(r => {
+        const title = r.querySelector('.st-title').value.trim();
+        const priority = r.querySelector('.st-priority').value;
+        const hours = r.querySelector('.st-hours').value;
+        const assignedTo = r.querySelector('.st-assigned').value;
+
+        if (title && assignedTo) {
+            tasks.push({
+                title,
+                description: `Allocated from Goal: ${goalTitle} (Est: ${hours} hrs)`,
+                priority,
+                assignedTo: parseInt(assignedTo)
+            });
+        }
+    });
+
+    if (tasks.length === 0) {
+        alert('Please define at least one sub-task with an assigned employee.');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/v1/tasks/bulk-allocate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ goalTitle, tasks })
+        });
+        const json = await res.json();
+        if (json.success) {
+            alert(`🎉 ${json.message || 'Tasks allocated successfully!'}`);
+            document.getElementById('modal-decomposition').classList.remove('active');
+            if (typeof fetchTasks === 'function') fetchTasks();
+        } else {
+            alert(json.message || 'Failed to allocate tasks');
+        }
+    } catch (err) {
+        console.error('Error publishing tasks:', err);
+    }
+}
