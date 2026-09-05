@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance &amp; Leave — PCS Enterprise</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .tab-group {
+    display: inline-flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 6px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  .tab-group button {
+    padding: 8px 18px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .tab-group button.active {
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--teal-900);
+    box-shadow: 0 4px 12px rgba(31, 42, 36, 0.06);
+  }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(31, 42, 36, 0.4);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-box {
+    width: 100%;
+    max-width: 540px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur));
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .modal-header h3 {
+    font-size: 18.5px;
+    font-weight: 800;
+    color: var(--teal-900);
+  }
+  .modal-close {
+    font-size: 18px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+  .modal-close:hover {
+    color: var(--red);
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 15px;
+  }
+  .form-group label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.35);
+    color: var(--text-dark);
+    font-family: inherit;
+    font-size: 13.5px;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    background: rgba(255, 255, 255, 0.65);
+    border-color: var(--teal-600);
+  }
+  .grid-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ============================= SIDEBAR ============================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo"><i class="fa-solid fa-cube"></i></div>
+      <div class="brand-text">
+        <h1>PCS Admin</h1>
+        <span>Enterprise Suite</span>
+      </div>
+    </div>
+
+    <ul class="nav-list">
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-dashboard.html'"><i class="fa-solid fa-grip"></i> Dashboard</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-monitoring.html'"><i class="fa-solid fa-desktop"></i> Workstation Monitoring</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-organization.html'"><i class="fa-solid fa-sitemap"></i> Organization</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-customers.html'"><i class="fa-solid fa-address-card"></i> Customers</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-tasks.html'"><i class="fa-regular fa-square-check"></i> Tasks &amp; Audit Logs</li>
+      <li class="nav-item active" style="cursor:pointer;" onclick="window.location.href='/admin-attendance.html'"><i class="fa-regular fa-calendar"></i> Attendance &amp; Leave</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-communication.html'"><i class="fa-regular fa-comments"></i> Communication</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-settings.html'"><i class="fa-solid fa-gear"></i> Settings</li>
+    </ul>
+
+    <div class="sidebar-logout" id="logout-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</div>
+  </aside>
+
+  <!-- ============================== MAIN ============================== -->
+  <main class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i> Search anything...</div>
+
+      <nav class="topbar-nav">
+        <a href="/admin-dashboard.html">Dashboard</a>
+        <a href="/admin-attendance.html" class="active">Attendance &amp; Leave</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <button class="icon-btn" onclick="window.location.href='/admin-communication.html'"><i class="fa-regular fa-bell"></i><span class="badge">5</span></button>
+        <div class="topbar-user" onclick="window.location.href='/admin-profile.html'" style="cursor:pointer;">
+          <img src="https://i.pravatar.cc/80?img=12" alt="Admin avatar">
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page header -->
+    <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div>
+        <h2 id="page-title">Attendance &amp; Leave</h2>
+        <p id="page-description">Track employee daily clock-in/out records, approve manual corrections, and manage leave requests.</p>
+      </div>
+      <div style="display: flex; gap: 10px; align-items:center;">
+        <button type="button" onclick="window.downloadCurrentModuleTemplate('attendance')" class="btn-pill-action btn-pill-template"><i class="fa-solid fa-file-download"></i> Template</button>
+        <button type="button" onclick="window.exportModuleDataFile('attendance', 'xlsx')" class="btn-pill-action btn-pill-export"><i class="fa-solid fa-file-export"></i> Export Data</button>
+        <button type="button" onclick="window.openImportModal('attendance')" class="btn-pill-action btn-pill-import"><i class="fa-solid fa-file-import"></i> Import Data</button>
+        <button class="btn-primary" id="btn-add-correction"><i class="fa-solid fa-circle-plus"></i> Manual Correction</button>
+        <button class="btn-primary" id="btn-add-leave" style="display: none;"><i class="fa-solid fa-circle-plus"></i> Manual Leave Entry</button>
+        <button class="btn-primary" id="btn-add-out-entry" style="display: none;"><i class="fa-solid fa-circle-plus"></i> Record Out Entry</button>
+        <button class="btn-primary" id="btn-add-holiday" style="display: none;"><i class="fa-solid fa-circle-plus"></i> Add Holiday</button>
+      </div>
+    </div>
+
+    <!-- Combined Main Tab Group -->
+    <div class="tab-group" id="main-attendance-leave-tabs" style="margin-bottom: 24px;">
+      <button class="active" id="tab-btn-attendance"><i class="fa-regular fa-calendar-check"></i> Attendance Register</button>
+      <button id="tab-btn-leave"><i class="fa-solid fa-umbrella-beach"></i> Leave Management</button>
+      <button id="tab-btn-out-entry"><i class="fa-solid fa-person-walking-arrow-right"></i> Out Entry</button>
+      <button id="tab-btn-holidays"><i class="fa-regular fa-calendar-days"></i> Holidays</button>
+    </div>
+
+    <!-- ==================== TAB CONTENT: ATTENDANCE ==================== -->
+    <div id="tab-content-attendance">
+      <!-- Metrics Cards -->
+      <div class="stat-grid" style="margin-bottom:24px;">
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Present Today</span>
+            <div class="stat-icon teal"><i class="fa-solid fa-user-check"></i></div>
+          </div>
+          <div class="stat-value" id="count-present">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Late Arrivals</span>
+            <div class="stat-icon" style="background:rgba(245,158,11,0.2);color:#f59e0b;"><i class="fa-solid fa-clock"></i></div>
+          </div>
+          <div class="stat-value" id="count-late">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Absent Today</span>
+            <div class="stat-icon" style="background:rgba(239,68,68,0.2);color:#ef4444;"><i class="fa-solid fa-user-xmark"></i></div>
+          </div>
+          <div class="stat-value" id="count-absent">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Pending Corrections</span>
+            <div class="stat-icon" style="background:rgba(96,165,250,0.2);color:#60a5fa;"><i class="fa-solid fa-pen-to-square"></i></div>
+          </div>
+          <div class="stat-value" id="count-pending">0</div>
+        </div>
+      </div>
+
+      <!-- Table Card -->
+      <div class="card table-card">
+        <div class="card-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <h3 id="table-title">Daily Logs</h3>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="tab-group" id="attendance-subtabs">
+              <button class="active" id="tab-logs">Daily Logs</button>
+              <button id="tab-pcs-summary"><i class="fa-solid fa-chart-pie"></i> Monthly Summary</button>
+              <button id="tab-pending">Pending Corrections</button>
+            </div>
+            <button type="button" class="btn-primary" id="btn-run-calc" style="display:none; padding:7px 14px; font-size:12.5px; border-radius:var(--radius-sm);"><i class="fa-solid fa-bolt"></i> Calculate Attendance</button>
+          </div>
+        </div>
+
+        <!-- Daily Logs View -->
+        <div id="view-logs">
+          <!-- 📅 Date Range Filter Toolbar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding:12px 16px; background:rgba(255,255,255,0.45); border-radius:12px; border:1px solid rgba(255,255,255,0.6); flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label for="filter-start-date" style="font-size:12.5px; font-weight:800; color:var(--teal-900); display:flex; align-items:center; gap:4px;">
+                  <i class="fa-solid fa-calendar-days"></i> From:
+                </label>
+                <input type="date" id="filter-start-date" style="padding:6px 10px; height:36px; font-size:13px; font-weight:700; border-radius:8px; border:1.5px solid #cbd5e1; background:white; color:#0f172a; outline:none;">
+              </div>
+
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label for="filter-end-date" style="font-size:12.5px; font-weight:800; color:var(--teal-900); display:flex; align-items:center; gap:4px;">
+                  To:
+                </label>
+                <input type="date" id="filter-end-date" style="padding:6px 10px; height:36px; font-size:13px; font-weight:700; border-radius:8px; border:1.5px solid #cbd5e1; background:white; color:#0f172a; outline:none;">
+              </div>
+
+              <div style="display:inline-flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="btn" id="btn-quick-today" style="background:var(--teal-900); color:white; font-weight:700; font-size:12px; padding:6px 12px; border-radius:6px; border:none; cursor:pointer;">Today</button>
+                <button type="button" class="btn" id="btn-quick-yesterday" style="background:#f1f5f9; color:#334155; font-weight:700; font-size:12px; padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0; cursor:pointer;">Yesterday</button>
+                <button type="button" class="btn" id="btn-quick-7days" style="background:#f1f5f9; color:#334155; font-weight:700; font-size:12px; padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0; cursor:pointer;">Last 7 Days</button>
+                <button type="button" class="btn" id="btn-quick-30days" style="background:#f1f5f9; color:#334155; font-weight:700; font-size:12px; padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0; cursor:pointer;">This Month</button>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button type="button" class="btn" id="btn-export-daily-range-csv" style="background:linear-gradient(135deg, #047857, #065f46); color:white; font-weight:700; font-size:12.5px; padding:8px 16px; border-radius:8px; border:none; display:flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 2px 6px rgba(4,120,87,0.25);">
+                <i class="fa-solid fa-file-excel"></i> 📥 Export Range CSV
+              </button>
+              <button type="button" class="btn" id="btn-refresh-daily-logs" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:white; font-weight:700; font-size:12.5px; padding:8px 16px; border-radius:8px; border:none; display:flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 2px 6px rgba(2,132,199,0.25);">
+                <i class="fa-solid fa-arrows-rotate"></i> Sync Live Logs
+              </button>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Employee Name</th>
+                <th>Date</th>
+                <th>Check-In</th>
+                <th>Check-Out</th>
+                <th>Total Hours</th>
+                <th>Overtime (min)</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="logs-list">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Monthly PCS Summary View -->
+        <div id="view-pcs-summary" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding:4px 2px;">
+            <div style="font-size:13px; color:var(--text-muted); font-weight:700;">
+              <i class="fa-solid fa-calculator"></i> Rule Engine: Mon–Fri 09:45–19:00 | Sat 09:45–16:30 | Sun/Holiday Off
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <label style="font-size:12px; font-weight:700; color:var(--text-dark);">Month:</label>
+              <input type="month" id="filter-pcs-month" style="padding:6px 10px; font-size:12px; border-radius:6px; border:1px solid rgba(0,0,0,0.15); background:rgba(255,255,255,0.7);">
+              <button type="button" class="btn-secondary" id="btn-refresh-pcs" style="padding:6px 12px; font-size:12px;"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee Name</th>
+                  <th>Month</th>
+                  <th>Total Days</th>
+                  <th>Present</th>
+                  <th>Absent</th>
+                  <th>Leave</th>
+                  <th>Late In</th>
+                  <th>Early Out</th>
+                  <th>Office Hours</th>
+                  <th>Overtime</th>
+                  <th>Total Login</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="pcs-summary-list">
+                <!-- Dynamic summary rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pending Corrections View -->
+        <div id="view-pending" style="display:none;">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee Name</th>
+                <th>Date</th>
+                <th>Proposed Check-In</th>
+                <th>Proposed Check-Out</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pending-list">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB CONTENT: LEAVE ==================== -->
+    <div id="tab-content-leave" style="display: none;">
+      <!-- Metrics Cards -->
+      <div class="stat-grid" style="margin-bottom:24px;">
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Total Requests</span>
+            <div class="stat-icon" style="background:rgba(96,165,250,0.2);color:#60a5fa;"><i class="fa-solid fa-inbox"></i></div>
+          </div>
+          <div class="stat-value" id="count-total">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Pending Requests</span>
+            <div class="stat-icon" style="background:rgba(251,146,60,0.2);color:#fb923c;"><i class="fa-solid fa-clock"></i></div>
+          </div>
+          <div class="stat-value" id="count-leave-pending">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Approved Annual</span>
+            <div class="stat-icon" style="background:rgba(74,222,128,0.2);color:#4ade80;"><i class="fa-solid fa-umbrella-beach"></i></div>
+          </div>
+          <div class="stat-value" id="count-annual">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Approved Sick</span>
+            <div class="stat-icon" style="background:rgba(248,113,113,0.2);color:#f87171;"><i class="fa-solid fa-prescription-bottle-medical"></i></div>
+          </div>
+          <div class="stat-value" id="count-sick">0</div>
+        </div>
+      </div>
+
+      <!-- Table Card -->
+      <div class="card table-card">
+        <div class="card-head">
+          <h3>Leave Requests Master</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Leave Type</th>
+              <th>Duration</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="leaves-list">
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== TAB CONTENT: OUT ENTRY / GATE PASS ==================== -->
+    <div id="tab-content-out-entry" style="display: none;">
+      <!-- Metrics Cards -->
+      <div class="stat-grid" style="margin-bottom:24px;">
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Currently Out</span>
+            <div class="stat-icon" style="background:rgba(245,158,11,0.2);color:#f59e0b;"><i class="fa-solid fa-person-walking-arrow-right"></i></div>
+          </div>
+          <div class="stat-value" id="count-currently-out">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Total Out Today</span>
+            <div class="stat-icon teal"><i class="fa-solid fa-clipboard-list"></i></div>
+          </div>
+          <div class="stat-value" id="count-out-today">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Official Duty Out</span>
+            <div class="stat-icon" style="background:rgba(96,165,250,0.2);color:#60a5fa;"><i class="fa-solid fa-briefcase"></i></div>
+          </div>
+          <div class="stat-value" id="count-out-official">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Personal Out</span>
+            <div class="stat-icon" style="background:rgba(168,85,247,0.2);color:#a855f7;"><i class="fa-solid fa-user-clock"></i></div>
+          </div>
+          <div class="stat-value" id="count-out-personal">0</div>
+        </div>
+      </div>
+
+      <!-- Table Card -->
+      <div class="card table-card">
+        <div class="card-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <h3>Out Entry Register</h3>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input type="date" id="filter-out-date" style="padding:6px 10px; font-size:12px; border-radius:6px; border:1px solid rgba(0,0,0,0.15); background:rgba(255,255,255,0.7);">
+            <select id="filter-out-purpose" style="padding:6px 10px; font-size:12px; border-radius:6px; border:1px solid rgba(0,0,0,0.15); background:rgba(255,255,255,0.7);">
+              <option value="All">All Purposes</option>
+              <option value="Official Duty">Official Duty</option>
+              <option value="Client Visit">Client Visit</option>
+              <option value="Bank Work">Bank Work</option>
+              <option value="Personal Work">Personal Work</option>
+              <option value="Emergency / Medical">Medical</option>
+            </select>
+            <select id="filter-out-status" style="padding:6px 10px; font-size:12px; border-radius:6px; border:1px solid rgba(0,0,0,0.15); background:rgba(255,255,255,0.7);">
+              <option value="All">All Statuses</option>
+              <option value="Out">Out (Active)</option>
+              <option value="Returned">Returned</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+            <button type="button" class="btn-secondary" id="btn-refresh-out" style="padding:6px 12px; font-size:12px;"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee Name</th>
+                <th>Date</th>
+                <th>Out Time</th>
+                <th>In Time</th>
+                <th>Duration</th>
+                <th>Purpose</th>
+                <th>Destination / Reason</th>
+                <th>Status</th>
+                <th>Approved By</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="out-entries-list">
+              <!-- Dynamic out entry rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB CONTENT: HOLIDAYS ==================== -->
+    <div id="tab-content-holidays" style="display: none;">
+      <!-- Holiday Stats Cards -->
+      <div class="stat-grid" style="margin-bottom:24px;">
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Total Holidays (Year)</span>
+            <div class="stat-icon teal"><i class="fa-solid fa-calendar-days"></i></div>
+          </div>
+          <div class="stat-value" id="count-holidays-total">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Next Upcoming Holiday</span>
+            <div class="stat-icon amber"><i class="fa-solid fa-star"></i></div>
+          </div>
+          <div class="stat-value" style="font-size:18px; line-height:1.3; font-weight:800; color:var(--text-dark);" id="count-holiday-next">—</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Gazetted / Mandatory</span>
+            <div class="stat-icon blue"><i class="fa-solid fa-building-columns"></i></div>
+          </div>
+          <div class="stat-value" id="count-holidays-mandatory">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-top">
+            <span class="label">Optional / Restricted</span>
+            <div class="stat-icon purple"><i class="fa-solid fa-hand-holding-heart"></i></div>
+          </div>
+          <div class="stat-value" id="count-holidays-optional">0</div>
+        </div>
+      </div>
+
+      <!-- Holiday Table Card -->
+      <div class="card">
+        <div class="card-header-flex">
+          <h3><i class="fa-regular fa-calendar-days" style="color:var(--teal-600); margin-right:6px;"></i> Holiday Calendar & Official List</h3>
+          <div class="filter-controls" style="display: flex; gap: 8px; align-items:center; flex-wrap: wrap;">
+            <select id="filter-holiday-year" style="padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-weight:600; font-size: 13px;">
+              <option value="2026" selected>Year 2026</option>
+              <option value="2025">Year 2025</option>
+              <option value="All">All Years</option>
+            </select>
+            <select id="filter-holiday-type" style="padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-weight:600; font-size: 13px;">
+              <option value="All">All Types</option>
+              <option value="Gazetted">Gazetted Holiday</option>
+              <option value="National">National Holiday</option>
+              <option value="Festival">Festival</option>
+              <option value="Restricted">Restricted / Optional</option>
+              <option value="Company">Company Holiday</option>
+            </select>
+            <div class="input-with-icon" style="position:relative;">
+              <input type="text" id="filter-holiday-search" placeholder="Search occasion..." style="padding: 7px 12px 7px 32px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13px; width: 180px;">
+              <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:12px;"></i>
+            </div>
+            <button class="btn-secondary" id="btn-export-holidays-csv" style="padding: 7px 12px; font-size: 13px;"><i class="fa-solid fa-download"></i> Export CSV</button>
+            <button class="btn-icon" id="btn-refresh-holidays" title="Refresh Holidays"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Occasion / Holiday Name</th>
+                <th>Date</th>
+                <th>Day</th>
+                <th>Category / Type</th>
+                <th>Status</th>
+                <th>Nature</th>
+                <th>Description</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="holidays-list">
+              <!-- Dynamic holiday rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ================= MANUAL CORRECTION MODAL ================= -->
+<div class="modal-overlay" id="correction-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Manual Correction</h3>
+      <i class="fa-solid fa-xmark modal-close" id="correction-close"></i>
+    </div>
+    <form id="correction-form">
+      <div class="form-group">
+        <label for="corr-employee">Employee</label>
+        <select id="corr-employee" required>
+          <option value="">Select Employee</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="corr-date">Date</label>
+        <input type="date" id="corr-date" required>
+      </div>
+
+      <div class="grid-two-col">
+        <div class="form-group">
+          <label for="corr-in">Check-In Time</label>
+          <input type="time" id="corr-in">
+        </div>
+        <div class="form-group">
+          <label for="corr-out">Check-Out Time</label>
+          <input type="time" id="corr-out">
+        </div>
+      </div>
+
+      <div class="grid-two-col">
+        <div class="form-group">
+          <label for="corr-status">Status</label>
+          <select id="corr-status">
+            <option value="Present" selected>Present</option>
+            <option value="Absent">Absent</option>
+            <option value="Late">Late</option>
+            <option value="Half Day">Half Day</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="corr-overtime">Overtime (mins)</label>
+          <input type="number" id="corr-overtime" min="0" placeholder="e.g. 60">
+        </div>
+      </div>
+
+      <div class="action-btn-group">
+        <button type="button" class="btn-secondary" id="correction-cancel">Cancel</button>
+        <button type="submit" class="btn-primary">Apply Correction</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= MANUAL LEAVE ENTRY MODAL ================= -->
+<div class="modal-overlay" id="leave-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Manual Leave Entry</h3>
+      <i class="fa-solid fa-xmark modal-close" id="leave-close"></i>
+    </div>
+    <form id="leave-form">
+      <div class="form-group">
+        <label for="leave-employee">Employee</label>
+        <select id="leave-employee" required>
+          <option value="">Select Employee</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="leave-type">Leave Type</label>
+        <select id="leave-type" required>
+          <option value="Annual Leave">Annual Leave</option>
+          <option value="Sick Leave">Sick Leave</option>
+          <option value="Casual Leave">Casual Leave</option>
+          <option value="Maternity Leave">Maternity Leave</option>
+          <option value="Unpaid Leave">Unpaid Leave</option>
+        </select>
+      </div>
+
+      <div class="grid-two-col">
+        <div class="form-group">
+          <label for="leave-start">Start Date</label>
+          <input type="date" id="leave-start" required>
+        </div>
+        <div class="form-group">
+          <label for="leave-end">End Date</label>
+          <input type="date" id="leave-end" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="leave-reason">Reason</label>
+        <textarea id="leave-reason" rows="3" placeholder="Enter reason details..."></textarea>
+      </div>
+
+      <div class="action-btn-group">
+        <button type="button" class="btn-secondary" id="leave-cancel">Cancel</button>
+        <button type="submit" class="btn-primary">Record Leave</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= RECORD OUT ENTRY MODAL ================= -->
+<div class="modal-overlay" id="out-entry-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-person-walking-arrow-right"></i> Record Out Entry</h3>
+      <i class="fa-solid fa-xmark modal-close" id="out-entry-close"></i>
+    </div>
+    <form id="out-entry-form">
+      <div class="form-group">
+        <label for="out-employee">Employee</label>
+        <select id="out-employee" required>
+          <option value="">Select Employee</option>
+        </select>
+      </div>
+
+      <div class="grid-two-col">
+        <div class="form-group">
+          <label for="out-date">Date</label>
+          <input type="date" id="out-date" required>
+        </div>
+        <div class="form-group">
+          <label for="out-purpose">Purpose</label>
+          <select id="out-purpose" required>
+            <option value="Official Duty">Official Duty</option>
+            <option value="Client Visit">Client Visit</option>
+            <option value="Bank Work">Bank Work</option>
+            <option value="Personal Work">Personal Work</option>
+            <option value="Emergency / Medical">Medical / Emergency</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-two-col">
+        <div class="form-group">
+          <label for="out-time-val">Out Time</label>
+          <input type="time" id="out-time-val" required>
+        </div>
+        <div class="form-group">
+          <label for="in-time-val">Expected / In Time (Optional)</label>
+          <input type="time" id="in-time-val">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="out-destination">Destination / Location</label>
+        <input type="text" id="out-destination" placeholder="e.g. Client Office - Andheri, Bank of Baroda">
+      </div>
+
+      <div class="form-group">
+        <label for="out-reason">Detailed Reason</label>
+        <textarea id="out-reason" rows="2" placeholder="State reason for movement..."></textarea>
+      </div>
+
+      <div class="action-btn-group">
+        <button type="button" class="btn-secondary" id="out-entry-cancel">Cancel</button>
+        <button type="submit" class="btn-primary">Submit Out Entry</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= MARK RETURN MODAL ================= -->
+<div class="modal-overlay" id="mark-return-modal">
+  <div class="modal-box" style="max-width: 420px;">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-clock-rotate-left"></i> Mark Return Time</h3>
+      <i class="fa-solid fa-xmark modal-close" id="mark-return-close"></i>
+    </div>
+    <form id="mark-return-form">
+      <input type="hidden" id="return-entry-id">
+      <div class="form-group">
+        <label for="return-in-time">Actual In Time (Return Time)</label>
+        <input type="time" id="return-in-time" required>
+      </div>
+      <div class="form-group">
+        <label for="return-remarks">Remarks (Optional)</label>
+        <textarea id="return-remarks" rows="2" placeholder="Task completed / returned..."></textarea>
+      </div>
+      <div class="action-btn-group">
+        <button type="button" class="btn-secondary" id="mark-return-cancel">Cancel</button>
+        <button type="submit" class="btn-primary">Confirm Return</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= EMPLOYEE HISTORY & TELEMETRY MODAL (WORKSTATION MONITORING STYLE) ================= -->
+<div class="modal-overlay" id="emp-history-modal" style="z-index:999999;">
+  <div class="modal-box" style="max-width:1380px; width:96vw; height:88vh; max-height:880px; display:flex; flex-direction:column; padding:24px; background:rgba(255,255,255,0.98); border-radius:20px; box-shadow:0 25px 70px rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.9); box-sizing:border-box;">
+    
+    <!-- Modal Top Header (Identical to Workstation Monitoring) -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; border-bottom:1px solid rgba(0,0,0,0.1); padding-bottom:16px; flex-shrink:0;">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <img src="https://i.pravatar.cc/80?img=12" id="hist-emp-avatar" style="width:56px; height:56px; border-radius:50%; border:3px solid var(--teal-900); box-shadow: 0 2px 8px rgba(0,0,0,0.15);" alt="Employee avatar">
+        <div>
+          <h3 style="font-size:22px; font-weight:800; color:#0f172a; margin:0;" id="hist-emp-name">Employee Full Name</h3>
+          <div style="font-size:13.5px; margin-top:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span id="hist-emp-code" style="font-weight:800; background:#ea580c; color:white; padding:3px 12px; border-radius:12px; font-size:12px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.2);">EMP-0001</span>
+            <span style="color:#64748b;">•</span>
+            <span id="hist-emp-workstation" style="font-weight:700; color:#0f172a;"><i class="fa-solid fa-desktop" style="color:#047857; margin-right:4px;"></i> malharpc</span>
+            <span style="color:#64748b;">•</span>
+            <span id="hist-emp-os" style="font-weight:700; color:#0f172a;"><i class="fa-brands fa-windows" style="color:#0284c7; margin-right:4px;"></i> Microsoft Windows 11 Pro 64-bit</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div style="text-align:right; font-size:12.5px; color:#0f172a; font-weight:700; line-height:1.4;">
+          <div>IP: <span id="hist-emp-ip" style="color:#047857; font-weight:800;">192.168.1.101</span></div>
+          <div>Agent: <span id="hist-emp-agent" style="color:#ea580c; font-weight:800;">v26.27.4174</span></div>
+        </div>
+        <span class="badge-status online" id="hist-emp-status" style="font-weight:800; font-size:12.5px; padding:6px 14px; background:#dcfce7; color:#15803d; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
+          <span style="width:8px; height:8px; border-radius:50%; background:#16a34a; display:inline-block;"></span> Online (Active)
+        </span>
+        <span id="emp-history-close" style="font-size:28px; cursor:pointer; color:#0f172a; font-weight:800; margin-left:8px; line-height:1; transition: transform 0.15s ease;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#0f172a'" title="Close Modal">&times;</span>
+      </div>
+    </div>
+
+    <!-- Filter & Search Bar (Identical to Workstation Monitoring) -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap; flex-shrink:0;">
+      <div style="position:relative; flex:1; min-width:280px;">
+        <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:14px;"></i>
+        <input type="text" id="hist-search-input" class="form-control" style="padding-left:38px; height:42px; font-size:13.5px; width:100%; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box;" placeholder="Search date (e.g. 2026-09-02), status, source, or working hours...">
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <label style="font-size:13px; font-weight:700; color:#0f172a;"><i class="fa-solid fa-clock"></i> Filter Time:</label>
+        <select class="select-pill" id="hist-range-select" style="font-size:13px; padding:8px 16px; background:white; height:42px; border-radius:8px; border:1px solid #cbd5e1; font-weight:700; cursor:pointer;">
+          <option value="today">📅 Today (Full Day Logs)</option>
+          <option value="yesterday">🗓️ Yesterday</option>
+          <option value="7days">📊 Last 7 Days</option>
+          <option value="30days" selected>📈 Last 30 Days (Full History)</option>
+          <option value="all2026">🏛️ Full 2026 History (Jan - Dec 2026)</option>
+          <option value="custom">⚙️ Custom Date Range</option>
+        </select>
+        <div id="hist-custom-dates" style="display:none; align-items:center; gap:6px;">
+          <input type="date" id="hist-start-date" style="padding:6px 10px; font-size:12.5px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:white; height:40px;">
+          <span style="font-size:12px; font-weight:700; color:#64748b;">to</span>
+          <input type="date" id="hist-end-date" style="padding:6px 10px; font-size:12.5px; font-weight:700; border-radius:8px; border:1px solid #cbd5e1; background:white; height:40px;">
+        </div>
+        <button type="button" class="btn-pill" id="btn-export-emp-history" style="background:linear-gradient(135deg, #047857, #065f46); color:white; font-weight:700; border:none; height:42px; padding:0 18px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; border-radius:8px; box-shadow:0 2px 8px rgba(4,120,87,0.35);" title="Download logs for this employee as Excel/CSV">
+          <i class="fa-solid fa-file-excel"></i> Export Excel / CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary KPI Bar inside modal -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:14px; flex-shrink:0;" id="hist-kpi-bar">
+      <div style="background:white; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; text-align:center;">
+        <div style="font-size:11px; color:#64748b; font-weight:700;">Total Records</div>
+        <div style="font-size:16px; font-weight:800; color:#0f172a;" id="hist-kpi-total">0</div>
+      </div>
+      <div style="background:#f0fdf4; padding:8px 12px; border-radius:8px; border:1px solid #bbf7d0; text-align:center;">
+        <div style="font-size:11px; color:#166534; font-weight:700;">Present Days</div>
+        <div style="font-size:16px; font-weight:800; color:#15803d;" id="hist-kpi-present">0</div>
+      </div>
+      <div style="background:#fefce8; padding:8px 12px; border-radius:8px; border:1px solid #fef08a; text-align:center;">
+        <div style="font-size:11px; color:#854d0e; font-weight:700;">Late Days</div>
+        <div style="font-size:16px; font-weight:800; color:#b45309;" id="hist-kpi-late">0</div>
+      </div>
+      <div style="background:#fef2f2; padding:8px 12px; border-radius:8px; border:1px solid #fecaca; text-align:center;">
+        <div style="font-size:11px; color:#991b1b; font-weight:700;">Absent Days</div>
+        <div style="font-size:16px; font-weight:800; color:#b91c1c;" id="hist-kpi-absent">0</div>
+      </div>
+      <div style="background:#f8fafc; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; text-align:center;">
+        <div style="font-size:11px; color:#475569; font-weight:700;">Total Hours</div>
+        <div style="font-size:16px; font-weight:800; color:#334155;" id="hist-kpi-hours">0.00 hrs</div>
+      </div>
+    </div>
+
+    <!-- Logs Table Container (Expands to Fill Screen Height) -->
+    <div style="flex:1; overflow-y:auto; overflow-x:auto; border-radius:12px; border:1px solid rgba(0,0,0,0.08); background:white; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+      <table style="width:100%; border-collapse:collapse; min-width:1000px;" id="table-emp-hist">
+        <thead style="position:sticky; top:0; background:#f1f5f9; z-index:2;">
+          <tr id="hist-table-head" style="text-align:left; border-bottom:2px solid rgba(0,0,0,0.08); font-size:12.5px; color:#475569; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">
+            <th style="padding:12px 16px; white-space:nowrap; width:150px;">Date</th>
+            <th style="padding:12px 16px; white-space:nowrap; width:140px;">Check-In (In Time)</th>
+            <th style="padding:12px 16px; white-space:nowrap; width:140px;">Check-Out (Out Time)</th>
+            <th style="padding:12px 16px; white-space:nowrap; width:150px;">Working Duration</th>
+            <th style="padding:12px 16px; white-space:nowrap; width:140px;">Overtime</th>
+            <th style="padding:12px 16px; white-space:nowrap; text-align:center; width:120px;">Status</th>
+            <th style="padding:12px 16px; white-space:nowrap; text-align:center; width:150px;">Punch Source</th>
+          </tr>
+        </thead>
+        <tbody id="hist-table-body">
+          <!-- Loaded dynamically via JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modal Footer / Status Bar (Identical to Workstation Monitoring) -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:12px; color:var(--text-muted); flex-shrink:0;">
+      <div><i class="fa-solid fa-shield-halved" style="color:var(--teal-600); margin-right:4px;"></i> Privacy Protected • Official Attendance & Biometric Workstation Telemetry</div>
+      <div style="font-weight:700; color:#475569;">Teramind Enterprise Telemetry Connected • 2026 Attendance Rule Engine</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD / EDIT HOLIDAY MODAL ================= -->
+<div class="modal-overlay" id="holiday-modal">
+  <div class="modal-box" style="max-width: 520px;">
+    <div class="modal-header">
+      <h3 id="holiday-modal-title"><i class="fa-solid fa-calendar-plus" style="color:var(--teal-600); margin-right:6px;"></i> Add Official Holiday</h3>
+      <i class="fa-solid fa-xmark modal-close" id="holiday-modal-close"></i>
+    </div>
+    <form id="holiday-form">
+      <input type="hidden" id="holiday-id">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label for="holiday-name" style="display:block; font-weight:700; margin-bottom:6px; font-size:13px;">Holiday / Occasion Name <span style="color:var(--red);">*</span></label>
+        <input type="text" id="holiday-name" placeholder="e.g. Ganesh Chaturthi, Diwali, Republic Day" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box; font-size:13.5px;">
+      </div>
+
+      <div class="grid-two-col" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div class="form-group">
+          <label for="holiday-date" style="display:block; font-weight:700; margin-bottom:6px; font-size:13px;">Holiday Date <span style="color:var(--red);">*</span></label>
+          <input type="date" id="holiday-date" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box; font-size:13.5px;">
+        </div>
+        <div class="form-group">
+          <label for="holiday-type" style="display:block; font-weight:700; margin-bottom:6px; font-size:13px;">Category / Type</label>
+          <select id="holiday-type" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box; font-size:13.5px;">
+            <option value="Gazetted">Gazetted Holiday</option>
+            <option value="National">National Holiday</option>
+            <option value="Festival">Festival</option>
+            <option value="Restricted">Restricted / Optional</option>
+            <option value="Company">Company Holiday</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="display:flex; align-items:center; gap:10px; margin: 14px 0;">
+        <input type="checkbox" id="holiday-is-optional" style="width:18px; height:18px; cursor:pointer;">
+        <label for="holiday-is-optional" style="margin:0; cursor:pointer; font-weight:600; font-size:13.5px;">Restricted / Optional Holiday (Employee can choose)</label>
+      </div>
+
+      <div class="form-group" style="margin-bottom:18px;">
+        <label for="holiday-desc" style="display:block; font-weight:700; margin-bottom:6px; font-size:13px;">Description / Remarks (Optional)</label>
+        <textarea id="holiday-desc" rows="2" placeholder="e.g. Office closed / All branches holiday" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box; font-size:13.5px;"></textarea>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" class="btn-secondary" id="holiday-cancel-btn" style="padding:8px 16px;">Cancel</button>
+        <button type="submit" class="btn-primary" id="holiday-save-btn" style="padding:8px 18px;"><i class="fa-solid fa-floppy-disk"></i> Save Holiday</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="auth.js"></script>
+<script src="script.js"></script>
+<script src="js/csv-exporter.js"></script>
+<script src="js/csvImportExportModal.js"></script>
+<script src="attendance.js"></script>
+</body>
+</html>

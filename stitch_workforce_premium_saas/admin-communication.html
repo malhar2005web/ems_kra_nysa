@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Communication Center — PCS Enterprise</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .notice-card {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(12px);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    margin-bottom: 15px;
+  }
+  .notice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .notice-header h4 {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--teal-900);
+  }
+  .notice-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .notice-body {
+    font-size: 13.5px;
+    color: var(--text-dark);
+    line-height: 1.5;
+  }
+  .chat-bubble-me {
+    background: linear-gradient(135deg, var(--teal-600), var(--teal-700));
+    color: white;
+    padding: 10px 14px;
+    border-radius: 14px 14px 2px 14px;
+    max-width: 70%;
+    margin-left: auto;
+    font-size: 13px;
+    box-shadow: 0 4px 12px rgba(22, 160, 133, 0.2);
+  }
+  .chat-bubble-them {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: var(--text-dark);
+    padding: 10px 14px;
+    border-radius: 14px 14px 14px 2px;
+    max-width: 70%;
+    margin-right: auto;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ============================= SIDEBAR ============================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo"><i class="fa-solid fa-cube"></i></div>
+      <div class="brand-text">
+        <h1>PCS Admin</h1>
+        <span>Enterprise Suite</span>
+      </div>
+    </div>
+
+    <ul class="nav-list">
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-dashboard.html'"><i class="fa-solid fa-grip"></i> Dashboard</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-monitoring.html'"><i class="fa-solid fa-desktop"></i> Workstation Monitoring</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-organization.html'"><i class="fa-solid fa-sitemap"></i> Organization</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-customers.html'"><i class="fa-solid fa-address-card"></i> Customers</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-tasks.html'"><i class="fa-regular fa-square-check"></i> Tasks &amp; Audit Logs</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-support.html'"><i class="fa-solid fa-headset"></i> Support Desk</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-attendance.html'"><i class="fa-regular fa-calendar"></i> Attendance &amp; Leave</li>
+      <li class="nav-item active" style="cursor:pointer;" onclick="window.location.href='/admin-communication.html'"><i class="fa-regular fa-comments"></i> Communication</li>
+      <li class="nav-item" style="cursor:pointer;" onclick="window.location.href='/admin-settings.html'"><i class="fa-solid fa-gear"></i> Settings</li>
+    </ul>
+
+    <div class="sidebar-logout" id="logout-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</div>
+  </aside>
+
+  <!-- ============================== MAIN ============================== -->
+  <main class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i> Search anything...</div>
+
+      <nav class="topbar-nav">
+        <a href="/admin-dashboard.html">Dashboard</a>
+        <a href="/admin-communication.html" class="active">Communication Center</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <button class="icon-btn" onclick="window.location.href='/admin-communication.html'"><i class="fa-regular fa-bell"></i><span class="badge">5</span></button>
+        <div class="topbar-user" onclick="window.location.href='/admin-profile.html'" style="cursor:pointer;">
+          <img src="https://i.pravatar.cc/80?img=12" alt="Admin avatar">
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page header -->
+    <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div>
+        <h2 id="comm-title">Notice Board &amp; Broadcasting</h2>
+        <p id="comm-desc">Publish office-wide alerts, schedule team announcements, or direct target alerts to individual staff.</p>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="btn-primary" onclick="window.openAdminApprovalsInbox()" style="background:linear-gradient(135deg,var(--teal-600),var(--teal-900));"><i class="fa-solid fa-inbox"></i> Handover Approvals</button>
+        <div class="tab-group" id="comm-tabs" style="display:flex; gap:6px; background:rgba(255,255,255,0.15); padding:6px; border-radius:12px; border:1px solid rgba(255,255,255,0.25);">
+          <button class="active" id="btn-announcements" style="padding:8px 16px; border:none; background:transparent; border-radius:8px; font-weight:700; color:var(--text-dark); cursor:pointer;">Notice Board</button>
+          <button id="btn-chat" style="padding:8px 16px; border:none; background:transparent; border-radius:8px; font-weight:700; color:var(--text-muted); cursor:pointer;">Direct Chat Room</button>
+        </div>
+        <button class="btn-primary" id="btn-add-notice"><i class="fa-solid fa-bullhorn"></i> Publish Notice</button>
+      </div>
+    </div>
+
+    <!-- Announcement Section -->
+    <div id="announcements-view">
+      <!-- Table Card -->
+      <div class="card table-card">
+        <div class="card-head">
+          <h3>Announcements Roster</h3>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Date Published</th>
+              <th>Title</th>
+              <th>Message Body</th>
+              <th>Target Audience</th>
+            </tr>
+          </thead>
+          <tbody id="notices-list">
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Chat Room Section -->
+    <div id="chat-view" style="display:none; padding:15px; height:580px;">
+      <div style="display:flex; height:100%; gap:20px; background:rgba(255,255,255,0.1); border-radius:var(--radius-lg); overflow:hidden; border:1px solid rgba(255,255,255,0.25);">
+        <!-- Contacts Sidebar -->
+        <div style="width:280px; display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.15);">
+          <div style="padding:15px; border-bottom:1px solid rgba(255,255,255,0.2); font-weight:800; color:var(--teal-900);">Chat Channels</div>
+          <div id="chat-contacts-list" style="flex:1; overflow-y:auto; padding:10px;">
+            <!-- Dynamic contacts -->
+          </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div style="flex:1; display:flex; flex-direction:column;">
+          <div id="chat-active-header" style="padding:15px; border-bottom:1px solid rgba(255,255,255,0.2); font-weight:800; color:var(--teal-900); background:rgba(255,255,255,0.1);">Select a channel to chat</div>
+          <div id="chat-messages-container" style="flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+            <!-- Messages go here -->
+          </div>
+          <div style="padding:15px; border-top:1px solid rgba(255,255,255,0.2); display:flex; gap:10px;">
+            <input type="text" id="chat-input" placeholder="Type your message..." style="flex:1; padding:10px 14px; border-radius:var(--radius-pill); border:1px solid rgba(255,255,255,0.4); background:rgba(255,255,255,0.3); outline:none;">
+            <button class="btn-primary" id="chat-send-btn" style="border-radius:var(--radius-pill);"><i class="fa-solid fa-paper-plane"></i> Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Timeline Widget Integration Area -->
+    <div id="timeline-audit-view" style="display:none; margin-top:20px;"></div>
+
+  </main>
+</div>
+
+<!-- ================= PUBLISH NOTICE MODAL ================= -->
+<div class="modal-overlay" id="notice-modal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(31, 42, 36, 0.4); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity 0.25s ease;">
+  <div class="modal-box" style="max-width: 540px;">
+    <div class="modal-header">
+      <h3 id="modal-title">Publish Corporate Notice</h3>
+      <i class="fa-solid fa-xmark modal-close" id="notice-close" onclick="window.closeNoticeModal()" style="cursor:pointer;"></i>
+    </div>
+    <form id="notice-form">
+      <div class="form-group" style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;">
+        <label style="font-size:12.5px; font-weight:700; color:var(--text-dark);">Notice Title *</label>
+        <input type="text" id="not-title" required placeholder="e.g. Office Holiday Announcement" style="padding:10px 12px; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.55); background:rgba(255,255,255,0.35); outline:none;">
+      </div>
+
+      <div class="form-group" style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;">
+        <label style="font-size:12.5px; font-weight:700; color:var(--text-dark);">Target Audience</label>
+        <select id="not-target" style="padding:10px 12px; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.55); background:rgba(255,255,255,0.35); outline:none;">
+          <option value="All Staff">All Staff</option>
+          <option value="Department">Department Specific</option>
+          <option value="Managers">Managers Only</option>
+          <option value="Individual">Individual Employee</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="group-employee-select" style="display:none; flex-direction:column; gap:6px; margin-bottom:14px;">
+        <label style="font-size:12.5px; font-weight:700; color:var(--text-dark);">Select Target Employee</label>
+        <select id="not-employee" style="padding:10px 12px; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.55); background:rgba(255,255,255,0.35); outline:none;">
+          <option value="">Select Employee</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="display:flex; flex-direction:column; gap:6px; margin-bottom:18px;">
+        <label style="font-size:12.5px; font-weight:700; color:var(--text-dark);">Message Body *</label>
+        <textarea id="not-message" rows="4" required placeholder="Type full notice content..." style="padding:10px 12px; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.55); background:rgba(255,255,255,0.35); outline:none; resize:none; font-family:inherit;"></textarea>
+      </div>
+
+      <div class="action-btn-group" style="display:flex; gap:12px;">
+        <button type="button" class="btn-secondary" id="notice-cancel" onclick="window.closeNoticeModal()" style="flex:1;">Cancel</button>
+        <button type="submit" class="btn-primary" style="flex:1;">Publish Notice</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="auth.js"></script>
+<script src="script.js"></script>
+<script src="js/taskHandoverModal.js"></script>
+<script src="js/activityTimelineWidget.js"></script>
+<script src="communication.js"></script>
+</body>
+</html>
