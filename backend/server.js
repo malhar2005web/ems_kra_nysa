@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";
@@ -39,6 +39,7 @@ import supportRoutes from "./routes/support.route.js";
 import pcsAttendanceRoutes from "./routes/pcsAttendance.route.js";
 import outEntryRoutes from "./routes/outEntry.route.js";
 import holidayRoutes from "./routes/holiday.route.js";
+import kraRoutes from "./routes/kra.route.js";
 import { syncTeramindDataToCache } from "./services/teramind.service.js";
 
 // ESM fix
@@ -148,6 +149,8 @@ app.use("/api/v1/attendance/out-entries", outEntryRoutes);
 app.use("/api/v1/admin/out-entries", outEntryRoutes);
 app.use("/api/v1/holidays", holidayRoutes);
 app.use("/api/v1/admin/holidays", holidayRoutes);
+app.use("/api/v1/kra", kraRoutes);
+app.use("/api/kra", kraRoutes);
 
 // Fallback to login page
 app.get("/", (req, res) => {
@@ -192,7 +195,7 @@ const startHeartbeatMonitor = () => {
                     VALUES ($1, $2, 'Auto Paused', 'Heartbeat Lost')
                 `, [session.id, session.employee_id]);
 
-                console.log(`💓 Auto-paused stale session #${session.id} (Heartbeat Lost)`);
+                console.log(`ðŸ’“ Auto-paused stale session #${session.id} (Heartbeat Lost)`);
             }
         } catch (err) {
             console.error('Error in Heartbeat Monitor worker:', err.message);
@@ -227,7 +230,7 @@ const startDelegationExpiryWorker = () => {
                         VALUES ($1, 'Employee', $2, 'Primary', 'RETURNED', $3, $2, 'EXPIRED', 'Delegation period expired - auto reverted ownership', $2)
                     `, [item.task_id, item.from_employee_id, item.to_employee_id]);
 
-                    console.log(`⏱️ Auto-reverted expired delegation for task #${item.task_id}`);
+                    console.log(`â±ï¸ Auto-reverted expired delegation for task #${item.task_id}`);
                 }
             }
         } catch (err) {
@@ -240,7 +243,7 @@ const startDelegationExpiryWorker = () => {
 let teramindSyncWorkerStarted = false;
 const startTeramindSyncWorker = () => {
     if (teramindSyncWorkerStarted) {
-        console.log("⚠️ Teramind Sync Worker already running on this instance. Skipping duplicate initialization.");
+        console.log("âš ï¸ Teramind Sync Worker already running on this instance. Skipping duplicate initialization.");
         return;
     }
     teramindSyncWorkerStarted = true;
@@ -270,20 +273,21 @@ connectDB()
     startDelegationExpiryWorker();
     startTeramindSyncWorker();
     server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`💓 Background Heartbeat Monitor active (120s timeout)`);
-      console.log(`⏱️ Delegation Expiry & Escalation Worker active (60s loop)`);
-      console.log(`📡 Teramind Telemetry Cache Sync Worker active (5m loop)`);
+      console.log(`ðŸš€ Server running on port ${PORT}`);
+      console.log(`ðŸ’“ Background Heartbeat Monitor active (120s timeout)`);
+      console.log(`â±ï¸ Delegation Expiry & Escalation Worker active (60s loop)`);
+      console.log(`ðŸ“¡ Teramind Telemetry Cache Sync Worker active (5m loop)`);
     });
   })
 
   .catch((err) => {
-    console.error("❌ DB connection failed:", err);
+    console.error("âŒ DB connection failed:", err);
     // Start anyway in degraded mode
     server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT} (degraded - no DB)`);
+      console.log(`ðŸš€ Server running on port ${PORT} (degraded - no DB)`);
     });
   });
+
 
 
 
